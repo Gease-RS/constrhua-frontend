@@ -16,7 +16,7 @@ let client: ApolloClient<any> | null = null;
 function createApolloClient() {
   // 1. Configuração do HttpLink
   const httpLink = new HttpLink({
-    uri: process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT || 'http://localhost:3001/graphql',
+    uri: process.env.NEXT_PUBLIC_BACKEND_GRAPHQL_URL || 'http://localhost:3001/graphql',
     // fetchOptions: { cache: 'no-store' }, // Opcional: para garantir que as requisições não sejam cacheadas pelo navegador
   });
 

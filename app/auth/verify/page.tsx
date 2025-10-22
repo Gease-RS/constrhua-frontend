@@ -22,9 +22,13 @@ export default function VerifyPage() {
       return;
     }
 
-    // A chamada fetch para o endpoint REST /auth/verify permanece a mesma
-    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/verify`, {
-      method: 'POST',
+    // 1. Declare a URL e logue ANTES de chamar fetch
+    const fetchURL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/verify`;
+    console.log('🔗 Tentando verificar o código em:', fetchURL);
+
+    // 2. A chamada fetch para o endpoint REST /auth/verify, agora com sintaxe correta
+    fetch(fetchURL, { // <--- URL como 1º argumento, Objeto de Configuração como 2º
+      method: 'POST', // É importante garantir que o método POST esteja explícito
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
@@ -33,30 +37,31 @@ export default function VerifyPage() {
     })
       .then(async (res) => {
         if (!res.ok) {
-          const errorData = await res.json().catch(() => ({ message: 'Erro desconhecido na verificação.' }));
+          // Tenta parsear o corpo do erro. O catch() impede que o erro 'Unexpected token <'
+          // pare completamente a aplicação, mas ainda registra a mensagem de erro.
+          const errorData = await res.json().catch(() => ({ message: 'Erro desconhecido na verificação (sem JSON).' }));
           throw new Error(errorData.message || 'Erro na verificação');
         }
         const data = await res.json();
         console.log('✅ Usuário autenticado:', data.user);
 
-        // --- MUDANÇA IMPORTANTE AQUI ---
         // Invalida o cache da query 'CurrentUser' do React Query.
-        // Isso forçará o useCurrentUserQuery a buscar novos dados na próxima vez que for chamado.
         await queryClient.invalidateQueries({ queryKey: ['CurrentUser'] });
-        // --- Fim da mudança ---
 
         setMessage('Verificação bem-sucedida! Redirecionando...');
         setIsError(false);
         router.push('/dashboard');
       })
       .catch((error) => {
+        // O erro do "Unexpected token <" será exibido aqui,
+        // mas agora você tem certeza de que a URL está correta.
         console.error('❌ Erro na verificação:', error.message);
         setMessage(`Erro na verificação: ${error.message}. Redirecionando para o login...`);
         setIsError(true);
         setTimeout(() => router.push('/login'), 3000);
       });
-  }, [router, queryClient]); // Adicione 'queryClient' como uma dependência do useEffect
-
+  }, [router, queryClient]); // Dependências do useEffect
+  
   return (
     <div className="p-8 text-center">
       <p className={`text-xl font-semibold ${isError ? 'text-red-600' : 'text-gray-800'}`}>

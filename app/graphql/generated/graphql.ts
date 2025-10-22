@@ -269,7 +269,7 @@ export type MutationCreateReplyArgs = {
 
 
 export type MutationCreateStageArgs = {
-  input: CreateStageInput;
+  createStageInput: CreateStageInput;
 };
 
 
@@ -464,10 +464,16 @@ export type Query = {
   constructions: Array<Construction>;
   currentUser: User;
   data?: Maybe<Post>;
+  /** Lista todos os usuários com isActive: true. */
+  findActiveUsers: Array<UserType>;
+  /** Lista apenas os usuários com isActive: false. */
+  findInactiveUsers: Array<UserType>;
   findPostBySlug?: Maybe<Post>;
   getCategories: Array<Category>;
   getComments: Array<CommentType>;
   getPosts: Array<Post>;
+  /** Lista todos os usuários, incluindo os inativos. */
+  listAllUsers: Array<UserType>;
   me: UserType;
   popularTags: Array<TagCount>;
   professional: Professional;

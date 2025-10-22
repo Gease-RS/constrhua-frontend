@@ -38,6 +38,16 @@ src/
     ├── images/
     └── logos/
 ```
+#### Para Codegen carregar a váriavel antes da execução instale esse pacote
+npm install dotenv-cli --save-dev
+
+#### Adicione o script no package.json
+```bash
+"scripts": {
+  "codegen": "dotenv -e .env.local -- ts-node --project tsconfig.json codegen.ts" 
+  // O 'dotenv -e .env.local' garante que o arquivo seja carregado
+}
+```
 
 #### GitHub
 ```bash
@@ -59,3 +69,9 @@ yarn cache clean
 npm run codegen
 # ou
 yarn codegen
+
+#### precedência de carregamento
+.env.local
+.env.development.local
+.env.development
+.env
