@@ -1,0 +1,28 @@
+query GetAllConstructions {
+  constructions {
+    id
+    name
+    address
+    cep
+    city
+    district
+    createdAt
+    updatedAt
+
+    user {
+      id
+      email
+      username
+    }
+
+    teams {
+      id
+      name
+    }
+
+    stages {
+      id
+      name
+    }
+  }
+}
