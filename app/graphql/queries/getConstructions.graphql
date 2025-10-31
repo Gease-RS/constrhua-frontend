@@ -1,28 +1,51 @@
-query GetAllConstructions {
+query GetConstructions {
   constructions {
+    # Campos da Entidade Construction
     id
     name
     address
     cep
     city
     district
+    progress
     createdAt
     updatedAt
-
+    
+    # Relação: User (Opcional, mas útil)
     user {
       id
-      email
-      username
+      fullname
+      # Adicione outros campos de User que você precise
     }
-
+    
+    # Relação: Teams
     teams {
       id
       name
+      # Adicione outros campos de Team
     }
-
-    stages {
+    
+    # Relação: Phases (A nova hierarquia)
+    phases {
       id
       name
+      progress # Se a Phase tiver um campo progress
+      # Adicione outros campos de Phase
+      
+      # Relação: Stages (Aninhada dentro de Phase)
+      stages {
+        id
+        name
+        # Adicione outros campos de Stage
+        
+        # Relação: Tasks (Aninhada dentro de Stage)
+        tasks {
+          id
+          name
+          status
+          # Adicione outros campos de Task
+        }
+      }
     }
   }
 }

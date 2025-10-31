@@ -32,19 +32,16 @@ export default function SignupForm() {
   // Redireciona se a role não for válida ou não estiver presente
   useEffect(() => {
     if (!selectedRole || !Object.values(RoleUser).includes(selectedRole)) {
-      router.push('/signup'); // Redireciona de volta para a seleção de plano
+      router.push('/signup'); // Redireciona para a seleção de plano
     }
   }, [selectedRole, router]);
 
-  // Use o hook useMutation do React Query para a mutação createUser
-  // MUDANÇA AQUI: use 'isPending' em vez de 'isLoading'
-  const { mutate, isPending } = useMutation< // <--- Corrigido para 'isPending'
+  const { mutate, isPending } = useMutation<
     CreateUserMutation,
-    Error, // Tipo de erro. Pode ser mais específico se o backend retornar erros GraphQL
+    Error,
     CreateUserMutationVariables
   >({
     mutationFn: async (variables) => {
-      // Chama seu graphqlFetcher com o DocumentNode da mutação e as variáveis
       return graphqlFetcher<CreateUserMutation, CreateUserMutationVariables>(
         CreateUserDocument,
         variables
@@ -54,14 +51,30 @@ export default function SignupForm() {
       if (data?.createUser) {
         setSuccessMessage('Conta criada com sucesso! Redirecionando para o login...');
         setErrorMessage('');
-        setTimeout(() => router.push('/login'), 2000); // Redireciona para o login após o registro
+        setTimeout(() => router.push('/login'), 2000);
       } else {
         setErrorMessage('Erro desconhecido ao criar a conta.');
       }
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Erro de registro:', error);
-      setErrorMessage(error.message || 'Erro ao criar a conta. Tente novamente.');
+
+      // 🔍 Captura a mensagem de erro GraphQL corretamente
+      let message = 'Erro ao criar a conta. Tente novamente.';
+
+      try {
+        // Caso o erro venha no formato retornado pelo GraphQL
+        const gqlError = error?.response?.errors?.[0];
+        message =
+          gqlError?.message ||
+          gqlError?.extensions?.originalError?.message ||
+          error.message ||
+          message;
+      } catch {
+        // fallback
+      }
+
+      setErrorMessage(message);
       setSuccessMessage('');
     },
   });
@@ -76,18 +89,16 @@ export default function SignupForm() {
       return;
     }
 
-    // Chama a função mutate do React Query
     mutate({
       input: {
         fullname,
         username,
         email,
-        role: selectedRole, // A role já vem preenchida
+        role: selectedRole,
       },
     });
   };
 
-  // Não renderiza o formulário se a role não for válida ainda
   if (!selectedRole || !Object.values(RoleUser).includes(selectedRole)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">

@@ -36,10 +36,10 @@ export function NavUser() {
   if (isLoading || !user) return null;
 
   const urlImage =
-    `${process.env.NEXT_PUBLIC_API_BACKEND}/uploads/${user.avatar || 'no-avatar.jpg'}`;
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads/${user.avatar || 'no-avatar.jpeg'}`;
 
   const handleLogout = () => {
-    fetch(`${process.env.NEXT_PUBLIC_API_BACKEND}/auth/logout`, {
+    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`, {
       method: 'POST',
       credentials: 'include',
     }).then(() => {

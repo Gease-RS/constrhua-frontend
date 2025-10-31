@@ -6,7 +6,7 @@ import { useCurrentUser } from '@/app/hooks/useCurrentUser'; // Seu hook para o 
 
 // Importa o tipo da resposta da query de construções
 import { GetConstructionsQuery } from '@/app/graphql/generated/graphql';
-import { ConstructionTable } from './construction-table';
+import { ConstructionTable } from '../constructions/construction-table';
 
 // Define o URL da sua API GraphQL
 const graphqlApiUrl = process.env.NEXT_PUBLIC_BACKEND_GRAPHQL_URL || 'http://localhost:3000/graphql';

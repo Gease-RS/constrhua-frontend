@@ -65,6 +65,11 @@ git push -u origin main
 npm cache clean --force
 yarn cache clean
 ```
+#### Install Components
+```bash
+npx shadcn@latest add sonner
+npx shadcn@latest add radio-group
+```
 
 npm run codegen
 # ou

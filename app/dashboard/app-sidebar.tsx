@@ -1,7 +1,7 @@
 "use client"
 import Link from "next/link";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
-import { constructionData, contaData, equipeData, stageData } from "./data"
+import { constructionData, contaData, equipeData } from "./data"
 import Image from "next/image";
 import { NavUser } from "../components/nav-user";
 import { Home } from "lucide-react";
@@ -27,9 +27,9 @@ export default function AppSidebar() {
             <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <a href="/" className="text-white">
+                    <a href="/dashboard" className="text-white">
                       <Home />
-                      <span>Início</span>
+                      <span>Dashboard</span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -53,25 +53,6 @@ export default function AppSidebar() {
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
-            </SidebarGroupContent>
-            <SidebarGroupContent className="pt-2">
-              <SidebarGroupLabel>
-                <span className="text-logo-primary">
-                  ESTÁGIO
-                </span>
-              </SidebarGroupLabel>
-              <SidebarMenu >
-                {stageData.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                    <a href={item.href} className="text-white">
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
             </SidebarGroupContent>
             <SidebarGroupContent className="pt-2">
               <SidebarGroupLabel>

@@ -11,7 +11,7 @@ import { useCurrentUser } from '@/app/hooks/useCurrentUser'; // Seu hook para o 
 import { useRouter } from 'next/navigation'; // Para redirecionar após a criação
 
 // Define o URL da sua API GraphQL
-const graphqlApiUrl = process.env.NEXT_PUBLIC_GRAPHQL_API_URL || 'http://localhost:3000/graphql';
+const graphqlApiUrl = process.env.NEXT_PUBLIC_BACKEND_GRAPHQL_URL || 'http://localhost:3000/graphql';
 
 // Inicializa o cliente GraphQL
 const graphQLClient = new GraphQLClient(graphqlApiUrl);

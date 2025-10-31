@@ -79,7 +79,9 @@ export type Construction = {
   district: Scalars['String']['output'];
   id: Scalars['Int']['output'];
   name: Scalars['String']['output'];
-  stages?: Maybe<Array<Stage>>;
+  phases?: Maybe<Array<Phase>>;
+  /** Progresso total da construção, calculado pela média ponderada das Phases. */
+  progress: Scalars['Float']['output'];
   teams?: Maybe<Array<Team>>;
   updatedAt: Scalars['DateTime']['output'];
   user: User;
@@ -107,6 +109,7 @@ export type CreateConstructionInput = {
   city: Scalars['String']['input'];
   district: Scalars['String']['input'];
   name: Scalars['String']['input'];
+  /** ID do usuário responsável pela obra. */
   userId: Scalars['Int']['input'];
 };
 
@@ -114,6 +117,12 @@ export type CreateImageInput = {
   alt?: InputMaybe<Scalars['String']['input']>;
   type: MediaType;
   url: Scalars['String']['input'];
+};
+
+export type CreatePhaseInput = {
+  /** ID da construção à qual esta fase pertence. */
+  constructionId: Scalars['Int']['input'];
+  name: Scalars['String']['input'];
 };
 
 export type CreatePostInput = {
@@ -130,7 +139,7 @@ export type CreateProfessionalInput = {
   email: Scalars['String']['input'];
   name: Scalars['String']['input'];
   phone: Scalars['String']['input'];
-  role: Role;
+  role: RoleProfressional;
   teamId: Scalars['Int']['input'];
 };
 
@@ -146,15 +155,19 @@ export type CreateReplyLikeInput = {
 };
 
 export type CreateStageInput = {
-  constructionId: Scalars['Float']['input'];
   name: Scalars['String']['input'];
-  progress?: InputMaybe<Scalars['Float']['input']>;
+  /** ID da fase à qual esta etapa pertence. */
+  phaseId: Scalars['Int']['input'];
 };
 
-export type CreateSubStageInput = {
+export type CreateTaskInput = {
+  /** Custo orçado desta tarefa. Usado para ponderar o progresso geral. */
+  budgetedCost: Scalars['Float']['input'];
   name: Scalars['String']['input'];
-  progress?: InputMaybe<Scalars['Float']['input']>;
+  /** ID da etapa à qual esta tarefa pertence. */
   stageId: Scalars['Int']['input'];
+  /** Status inicial da tarefa. Padrão: NÃO_INICIADO. */
+  status?: InputMaybe<TaskStatus>;
 };
 
 export type CreateTeamInput = {
@@ -197,44 +210,68 @@ export enum MediaType {
 
 export type Mutation = {
   __typename?: 'Mutation';
+  completeTask: Task;
   createCategory: Category;
   createComment: CommentType;
+  /** Cria uma nova construção e a inicializa com progresso 0.0. */
   createConstruction: Construction;
+  /** Cria uma nova fase na construção. Pode copiar a estrutura de um modelo base. */
+  createPhase: Phase;
   createPost: Post;
   createProfessional: Professional;
   createReply: Reply;
+  /** Cria uma nova etapa dentro de uma fase específica. */
   createStage: Stage;
-  createSubStage: SubStage;
+  createTask: Task;
   createTeam: Team;
   createUser: UserType;
   deactivateAccount: Scalars['String']['output'];
-  deleteStage: Scalars['Boolean']['output'];
-  deleteSubStage: Scalars['Boolean']['output'];
   likeComment: CommentLike;
   likeReply: ReplyLike;
   logout: Scalars['Boolean']['output'];
+  /** Recalcula o progresso total da construção baseado no estado atual de todas as Tasks. */
+  recalculateConstructionProgress: Construction;
+  /** Recalcula e atualiza o campo de progresso da etapa com base nas Tasks filhas. */
+  recalculateStageProgress: Stage;
   removeCategory: Category;
   removeComment: CommentType;
+  /** Remove uma construção e todos os seus dados associados (Phases, Stages, Tasks). */
   removeConstruction: Construction;
+  /** Remove uma fase e todas as etapas e tarefas relacionadas. */
+  removePhase: Scalars['Boolean']['output'];
   removePost: DeletePostDto;
   removeProfessional: Professional;
   removeReply: Reply;
+  /** Remove uma etapa e todas as tarefas (Tasks) filhas. (Exige exclusão em cascata configurada no Prisma). */
+  removeStage: Scalars['Boolean']['output'];
   removeTag: Tag;
+  /** Remove uma tarefa e dispara o recálculo de progresso na Stage pai. */
+  removeTask: Scalars['Boolean']['output'];
   removeTeam: Team;
   sendAuthCode: Scalars['String']['output'];
   unlikeComment: CommentLike;
   unlikeReply: Scalars['Boolean']['output'];
   updateCategory: Category;
   updateComment: CommentType;
+  /** Atualiza os dados básicos de uma construção. */
   updateConstruction: Construction;
+  /** Atualiza o nome de uma fase existente. */
+  updatePhase: Phase;
   updatePost: Post;
   updateProfessional: Professional;
   updateProfile: UserType;
   updateReply: Reply;
+  /** Atualiza o nome ou se a etapa deve ser pulada. */
   updateStage: Stage;
-  updateSubStage: SubStage;
+  /** Atualiza detalhes da tarefa, como nome, custo orçado (budgetedCost) ou status. */
+  updateTask: Task;
   updateTeam: Team;
   verifyAuthCode: AuthResult;
+};
+
+
+export type MutationCompleteTaskArgs = {
+  id: Scalars['Int']['input'];
 };
 
 
@@ -250,6 +287,11 @@ export type MutationCreateCommentArgs = {
 
 export type MutationCreateConstructionArgs = {
   createConstructionInput: CreateConstructionInput;
+};
+
+
+export type MutationCreatePhaseArgs = {
+  createPhaseInput: CreatePhaseInput;
 };
 
 
@@ -273,8 +315,8 @@ export type MutationCreateStageArgs = {
 };
 
 
-export type MutationCreateSubStageArgs = {
-  input: CreateSubStageInput;
+export type MutationCreateTaskArgs = {
+  createTaskInput: CreateTaskInput;
 };
 
 
@@ -288,16 +330,6 @@ export type MutationCreateUserArgs = {
 };
 
 
-export type MutationDeleteStageArgs = {
-  id: Scalars['ID']['input'];
-};
-
-
-export type MutationDeleteSubStageArgs = {
-  id: Scalars['ID']['input'];
-};
-
-
 export type MutationLikeCommentArgs = {
   data: CreateCommentLikeInput;
 };
@@ -305,6 +337,16 @@ export type MutationLikeCommentArgs = {
 
 export type MutationLikeReplyArgs = {
   data: CreateReplyLikeInput;
+};
+
+
+export type MutationRecalculateConstructionProgressArgs = {
+  constructionId: Scalars['Int']['input'];
+};
+
+
+export type MutationRecalculateStageProgressArgs = {
+  stageId: Scalars['Int']['input'];
 };
 
 
@@ -319,7 +361,12 @@ export type MutationRemoveCommentArgs = {
 
 
 export type MutationRemoveConstructionArgs = {
-  id: Scalars['ID']['input'];
+  id: Scalars['Int']['input'];
+};
+
+
+export type MutationRemovePhaseArgs = {
+  id: Scalars['Int']['input'];
 };
 
 
@@ -338,7 +385,17 @@ export type MutationRemoveReplyArgs = {
 };
 
 
+export type MutationRemoveStageArgs = {
+  id: Scalars['Int']['input'];
+};
+
+
 export type MutationRemoveTagArgs = {
+  id: Scalars['Int']['input'];
+};
+
+
+export type MutationRemoveTaskArgs = {
   id: Scalars['Int']['input'];
 };
 
@@ -377,8 +434,14 @@ export type MutationUpdateCommentArgs = {
 
 
 export type MutationUpdateConstructionArgs = {
-  id: Scalars['ID']['input'];
+  id: Scalars['Int']['input'];
   updateConstructionInput: UpdateConstructionInput;
+};
+
+
+export type MutationUpdatePhaseArgs = {
+  id: Scalars['Int']['input'];
+  updatePhaseInput: UpdatePhaseInput;
 };
 
 
@@ -404,12 +467,14 @@ export type MutationUpdateReplyArgs = {
 
 
 export type MutationUpdateStageArgs = {
-  input: UpdateStageInput;
+  id: Scalars['Int']['input'];
+  updateStageInput: UpdateStageInput;
 };
 
 
-export type MutationUpdateSubStageArgs = {
-  input: UpdateSubStageInput;
+export type MutationUpdateTaskArgs = {
+  id: Scalars['Int']['input'];
+  updateTaskInput: UpdateTaskInput;
 };
 
 
@@ -421,6 +486,18 @@ export type MutationUpdateTeamArgs = {
 export type MutationVerifyAuthCodeArgs = {
   code: Scalars['String']['input'];
   email: Scalars['String']['input'];
+};
+
+export type Phase = {
+  __typename?: 'Phase';
+  construction?: Maybe<Construction>;
+  constructionId: Scalars['Int']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['Int']['output'];
+  name: Scalars['String']['output'];
+  progress: Scalars['Float']['output'];
+  stages?: Maybe<Array<Stage>>;
+  updatedAt: Scalars['DateTime']['output'];
 };
 
 export type Post = {
@@ -449,7 +526,7 @@ export type Professional = {
   id: Scalars['Int']['output'];
   name: Scalars['String']['output'];
   phone: Scalars['String']['output'];
-  role: Role;
+  role: RoleProfressional;
   team?: Maybe<Team>;
   teamId: Scalars['Int']['output'];
   updatedAt: Scalars['DateTime']['output'];
@@ -460,7 +537,9 @@ export type Query = {
   CommentsByPost: Array<CommentType>;
   category: Category;
   comment: CommentType;
-  construction?: Maybe<Construction>;
+  /** Retorna uma construção pelo seu ID, incluindo Phases, Stages e Tasks. */
+  construction: Construction;
+  /** Retorna todas as construções com a hierarquia de progresso completa. */
   constructions: Array<Construction>;
   currentUser: User;
   data?: Maybe<Post>;
@@ -475,20 +554,26 @@ export type Query = {
   /** Lista todos os usuários, incluindo os inativos. */
   listAllUsers: Array<UserType>;
   me: UserType;
+  /** Retorna uma fase pelo seu ID, incluindo etapas e tarefas. */
+  phase: Phase;
+  /** Retorna todas as fases de uma construção específica. */
+  phases: Array<Phase>;
   popularTags: Array<TagCount>;
   professional: Professional;
   professionals: Array<Professional>;
   replies: Array<Reply>;
   reply: Reply;
+  /** Retorna uma etapa pelo seu ID, incluindo as tarefas filhas. */
   stage: Stage;
-  stages: Array<Stage>;
-  stagesByConstruction: Array<Stage>;
-  subStage: SubStage;
-  subStages: Array<SubStage>;
-  subStagesByStage: Array<SubStage>;
+  /** Retorna todas as etapas de uma fase específica. */
+  stagesByPhase: Array<Stage>;
   tag: Tag;
   tagBySlug: Tag;
   tags: Array<Tag>;
+  /** Retorna uma tarefa pelo seu ID. */
+  task: Task;
+  /** Retorna todas as tarefas de uma etapa (Stage) específica. */
+  tasksByStage: Array<Task>;
   team: Team;
   teams: Array<Team>;
   users: Array<UserType>;
@@ -511,7 +596,7 @@ export type QueryCommentArgs = {
 
 
 export type QueryConstructionArgs = {
-  id: Scalars['ID']['input'];
+  id: Scalars['Int']['input'];
 };
 
 
@@ -522,6 +607,16 @@ export type QueryDataArgs = {
 
 export type QueryFindPostBySlugArgs = {
   slug: Scalars['String']['input'];
+};
+
+
+export type QueryPhaseArgs = {
+  id: Scalars['Int']['input'];
+};
+
+
+export type QueryPhasesArgs = {
+  constructionId: Scalars['Int']['input'];
 };
 
 
@@ -541,22 +636,12 @@ export type QueryReplyArgs = {
 
 
 export type QueryStageArgs = {
-  id: Scalars['ID']['input'];
+  id: Scalars['Int']['input'];
 };
 
 
-export type QueryStagesByConstructionArgs = {
-  constructionId: Scalars['ID']['input'];
-};
-
-
-export type QuerySubStageArgs = {
-  id: Scalars['ID']['input'];
-};
-
-
-export type QuerySubStagesByStageArgs = {
-  stageId: Scalars['ID']['input'];
+export type QueryStagesByPhaseArgs = {
+  phaseId: Scalars['Int']['input'];
 };
 
 
@@ -574,6 +659,16 @@ export type QueryTagsArgs = {
   search?: InputMaybe<Scalars['String']['input']>;
   skip?: InputMaybe<Scalars['Int']['input']>;
   take?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+export type QueryTaskArgs = {
+  id: Scalars['Int']['input'];
+};
+
+
+export type QueryTasksByStageArgs = {
+  stageId: Scalars['Int']['input'];
 };
 
 
@@ -605,14 +700,14 @@ export type ReplyLike = {
 };
 
 /** Papéis disponíveis para profissionais */
-export enum Role {
-  Arq = 'ARQ',
-  Autonomo = 'AUTONOMO',
-  Construtor = 'CONSTRUTOR',
-  Eng = 'ENG',
-  Mestre = 'MESTRE',
-  Operador = 'OPERADOR',
-  Proprietario = 'PROPRIETARIO',
+export enum RoleProfressional {
+  Architect = 'ARCHITECT',
+  Builder = 'BUILDER',
+  Engineer = 'ENGINEER',
+  Foreman = 'FOREMAN',
+  Freelancer = 'FREELANCER',
+  Operator = 'OPERATOR',
+  Owner = 'OWNER',
   Supervisor = 'SUPERVISOR'
 }
 
@@ -631,24 +726,14 @@ export type SendAuthCodeDto = {
 
 export type Stage = {
   __typename?: 'Stage';
-  construction?: Maybe<Construction>;
-  constructionId: Scalars['Float']['output'];
   createdAt: Scalars['DateTime']['output'];
   id: Scalars['Int']['output'];
+  isSkipped: Scalars['Boolean']['output'];
   name: Scalars['String']['output'];
+  phase?: Maybe<Phase>;
+  phaseId: Scalars['Int']['output'];
   progress: Scalars['Float']['output'];
-  substages?: Maybe<Array<SubStage>>;
-  updatedAt: Scalars['DateTime']['output'];
-};
-
-export type SubStage = {
-  __typename?: 'SubStage';
-  createdAt: Scalars['DateTime']['output'];
-  id: Scalars['Int']['output'];
-  name: Scalars['String']['output'];
-  progress: Scalars['Float']['output'];
-  stage?: Maybe<Stage>;
-  stageId: Scalars['Float']['output'];
+  tasks?: Maybe<Array<Task>>;
   updatedAt: Scalars['DateTime']['output'];
 };
 
@@ -676,6 +761,26 @@ export type TagWithPosts = {
   posts: Array<Post>;
   slug: Scalars['String']['output'];
 };
+
+export type Task = {
+  __typename?: 'Task';
+  budgetedCost: Scalars['Float']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  endDate?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars['Int']['output'];
+  name: Scalars['String']['output'];
+  stage?: Maybe<Stage>;
+  stageId: Scalars['Int']['output'];
+  startDate?: Maybe<Scalars['DateTime']['output']>;
+  status: TaskStatus;
+  updatedAt: Scalars['DateTime']['output'];
+};
+
+export enum TaskStatus {
+  Completed = 'COMPLETED',
+  InProgress = 'IN_PROGRESS',
+  NotStarted = 'NOT_STARTED'
+}
 
 export type Team = {
   __typename?: 'Team';
@@ -705,6 +810,7 @@ export type UpdateConstructionInput = {
   district?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['Int']['input'];
   name?: InputMaybe<Scalars['String']['input']>;
+  /** ID do usuário responsável pela obra. */
   userId?: InputMaybe<Scalars['Int']['input']>;
 };
 
@@ -712,6 +818,13 @@ export type UpdateImageInput = {
   alt?: InputMaybe<Scalars['String']['input']>;
   type?: InputMaybe<Scalars['String']['input']>;
   url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdatePhaseInput = {
+  /** ID da construção à qual esta fase pertence. */
+  constructionId?: InputMaybe<Scalars['Int']['input']>;
+  id: Scalars['Int']['input'];
+  name?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UpdatePostInput = {
@@ -729,7 +842,7 @@ export type UpdateProfessionalInput = {
   id: Scalars['Int']['input'];
   name?: InputMaybe<Scalars['String']['input']>;
   phone?: InputMaybe<Scalars['String']['input']>;
-  role?: InputMaybe<Role>;
+  role?: InputMaybe<RoleProfressional>;
   teamId?: InputMaybe<Scalars['Int']['input']>;
 };
 
@@ -741,17 +854,22 @@ export type UpdateReplyInput = {
 };
 
 export type UpdateStageInput = {
-  constructionId?: InputMaybe<Scalars['Float']['input']>;
   id: Scalars['ID']['input'];
   name?: InputMaybe<Scalars['String']['input']>;
+  /** ID da fase à qual esta etapa pertence. */
+  phaseId?: InputMaybe<Scalars['Int']['input']>;
   progress?: InputMaybe<Scalars['Float']['input']>;
 };
 
-export type UpdateSubStageInput = {
+export type UpdateTaskInput = {
+  /** Custo orçado desta tarefa. Usado para ponderar o progresso geral. */
+  budgetedCost?: InputMaybe<Scalars['Float']['input']>;
   id: Scalars['Int']['input'];
   name?: InputMaybe<Scalars['String']['input']>;
-  progress?: InputMaybe<Scalars['Float']['input']>;
+  /** ID da etapa à qual esta tarefa pertence. */
   stageId?: InputMaybe<Scalars['Int']['input']>;
+  /** Status inicial da tarefa. Padrão: NÃO_INICIADO. */
+  status?: InputMaybe<TaskStatus>;
 };
 
 export type UpdateTeamInput = {
@@ -828,13 +946,19 @@ export type CurrentUserQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type CurrentUserQuery = { __typename?: 'Query', currentUser: { __typename?: 'User', id: number, email: string, username: string, fullname: string, role: RoleUser, avatar?: string | null, isActive: boolean } };
 
-export type GetAllConstructionsQueryVariables = Exact<{ [key: string]: never; }>;
+export type GetConstructionsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetAllConstructionsQuery = { __typename?: 'Query', constructions: Array<{ __typename?: 'Construction', id: number, name: string, address: string, cep: string, city: string, district: string, createdAt: any, updatedAt: any, user: { __typename?: 'User', id: number, email: string, username: string }, teams?: Array<{ __typename?: 'Team', id: number, name: string }> | null, stages?: Array<{ __typename?: 'Stage', id: number, name: string }> | null }> };
+export type GetConstructionsQuery = { __typename?: 'Query', constructions: Array<{ __typename?: 'Construction', id: number, name: string, address: string, cep: string, city: string, district: string, progress: number, createdAt: any, updatedAt: any, user: { __typename?: 'User', id: number, fullname: string }, teams?: Array<{ __typename?: 'Team', id: number, name: string }> | null, phases?: Array<{ __typename?: 'Phase', id: number, name: string, progress: number, stages?: Array<{ __typename?: 'Stage', id: number, name: string, tasks?: Array<{ __typename?: 'Task', id: number, name: string, status: TaskStatus }> | null }> | null }> | null }> };
+
+export type GetProgressConstrucionsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetProgressConstrucionsQuery = { __typename?: 'Query', constructions: Array<{ __typename?: 'Construction', id: number, name: string, address: string, progress: number, user: { __typename?: 'User', id: number, username: string, fullname: string }, phases?: Array<{ __typename?: 'Phase', id: number, name: string, progress: number, stages?: Array<{ __typename?: 'Stage', id: number, name: string, progress: number, tasks?: Array<{ __typename?: 'Task', id: number, name: string, budgetedCost: number, status: TaskStatus, startDate?: any | null, endDate?: any | null }> | null }> | null }> | null, teams?: Array<{ __typename?: 'Team', id: number, name: string }> | null }> };
 
 
 export const CreateUserDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateUser"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateUserInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createUser"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"fullname"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}}]}}]}}]} as unknown as DocumentNode<CreateUserMutation, CreateUserMutationVariables>;
 export const SendAuthCodeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SendAuthCode"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"email"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"sendAuthCode"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"email"},"value":{"kind":"Variable","name":{"kind":"Name","value":"email"}}}]}}]}]}}]} as unknown as DocumentNode<SendAuthCodeMutation, SendAuthCodeMutationVariables>;
 export const CurrentUserDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"CurrentUser"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"currentUser"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"fullname"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}}]}}]}}]} as unknown as DocumentNode<CurrentUserQuery, CurrentUserQueryVariables>;
-export const GetAllConstructionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAllConstructions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"constructions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"address"}},{"kind":"Field","name":{"kind":"Name","value":"cep"}},{"kind":"Field","name":{"kind":"Name","value":"city"}},{"kind":"Field","name":{"kind":"Name","value":"district"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"username"}}]}},{"kind":"Field","name":{"kind":"Name","value":"teams"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"stages"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]} as unknown as DocumentNode<GetAllConstructionsQuery, GetAllConstructionsQueryVariables>;
+export const GetConstructionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetConstructions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"constructions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"address"}},{"kind":"Field","name":{"kind":"Name","value":"cep"}},{"kind":"Field","name":{"kind":"Name","value":"city"}},{"kind":"Field","name":{"kind":"Name","value":"district"}},{"kind":"Field","name":{"kind":"Name","value":"progress"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"fullname"}}]}},{"kind":"Field","name":{"kind":"Name","value":"teams"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"phases"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"progress"}},{"kind":"Field","name":{"kind":"Name","value":"stages"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"tasks"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"status"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetConstructionsQuery, GetConstructionsQueryVariables>;
+export const GetProgressConstrucionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetProgressConstrucions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"constructions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"address"}},{"kind":"Field","name":{"kind":"Name","value":"progress"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"fullname"}}]}},{"kind":"Field","name":{"kind":"Name","value":"phases"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"progress"}},{"kind":"Field","name":{"kind":"Name","value":"stages"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"progress"}},{"kind":"Field","name":{"kind":"Name","value":"tasks"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"budgetedCost"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"startDate"}},{"kind":"Field","name":{"kind":"Name","value":"endDate"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"teams"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]} as unknown as DocumentNode<GetProgressConstrucionsQuery, GetProgressConstrucionsQueryVariables>;

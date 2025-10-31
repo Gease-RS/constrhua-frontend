@@ -3,14 +3,11 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import {
-  GetAllConstructionsQuery, // Importa o tipo da resposta completa da query
+  GetConstructionsQuery
 } from '@/app/graphql/generated/graphql'; // Caminho para seus tipos GraphQL gerados
 
-// Define o tipo para um item individual de construção.
-// Baseado na sua definição de GetAllConstructionsQuery:
-// export type GetAllConstructionsQuery = { __typename?: 'Query', constructions: Array<{ ... }> };
-// A lista de construções está na propriedade 'constructions'.
-type ConstructionItem = GetAllConstructionsQuery['constructions'][number];
+
+type ConstructionItem = GetConstructionsQuery['constructions'][number];
 
 interface ConstructionTableProps {
   // A prop 'constructions' agora é tipada corretamente como um array de ConstructionItem
@@ -40,7 +37,7 @@ export function ConstructionTable({ constructions }: ConstructionTableProps) {
               <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{construction.city}</TableCell>
               <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{construction.cep}</TableCell>
               {/* Acessando user.email agora está corretamente tipado porque 'user' é parte de ConstructionItem */}
-              <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{construction.user?.email ?? 'N/A'}</TableCell>
+              <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{construction.user?.fullname ?? 'N/A'}</TableCell>
               <TableCell className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <Button variant="outline" size="sm" className="text-blue-600 hover:text-blue-800 border-blue-600 hover:border-blue-800 transition-colors duration-200 ease-in-out">Ver</Button>
                 <Button variant="ghost" size="sm" className="ml-2 text-gray-600 hover:text-gray-900 transition-colors duration-200 ease-in-out">Editar</Button>

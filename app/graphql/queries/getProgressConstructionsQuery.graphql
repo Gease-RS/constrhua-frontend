@@ -1,0 +1,45 @@
+query GetProgressConstrucions {
+  constructions {
+    id
+    name
+    address
+    progress # Progresso geral da construção (0.0 a 100.0)
+    
+    # 1. Dados do Usuário
+    user {
+      id
+      username
+      fullname
+    }
+    
+    # 2. Fases (Phases)
+    phases {
+      id
+      name
+      progress # Progresso da fase
+      
+      # 3. Etapas (Stages)
+      stages {
+        id
+        name
+        progress # Progresso da etapa
+        
+        # 4. Tarefas (Tasks)
+        tasks {
+          id
+          name
+          budgetedCost
+          status
+          startDate
+          endDate
+        }
+      }
+    }
+    
+    # 5. Equipes (Teams)
+    teams {
+      id
+      name
+    }
+  }
+}

@@ -41,7 +41,7 @@ export default function UserAvatarDropdown() {
 
   if (!user) return null;
 
-  const urlImage = user.avatar || "/default-avatar.png";
+  const urlImage = user.avatar || "/no-avatar.jpeg";
 
   return (
     <DropdownMenu>

@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCurrentUser } from '../hooks/useCurrentUser';
+import { ConstructionProgress } from './constructionProgress/page';
 
 export default function DashboardPage() {
   const { user, isLoading, isError } = useCurrentUser();
@@ -43,9 +44,8 @@ export default function DashboardPage() {
   // Se chegou até aqui, o usuário está autenticado e os dados estão disponíveis
   return (
     <div style={{ padding: '20px' }}>
-      <h1>Bem-vindo ao Dashboard, {user.username}!</h1>
-      <p>Este é o conteúdo protegido.</p>
-      {/* Exiba outros dados do usuário ou conteúdo da dashboard */}
+      <h1>Bem-vindo {user.username}, ao seu Dashboard</h1>
+      <ConstructionProgress />
     </div>
   );
 }
